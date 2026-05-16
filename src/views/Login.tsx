@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Activity, Mail, Lock, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Login() {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   
   // Email state
@@ -55,7 +56,7 @@ export default function Login() {
       const result = await signInWithPopup(auth, provider);
       await bootstrapUser(result.user.uid, result.user.displayName, (result.user as any).phoneNumber || null);
       toast.success('সফলভাবে লগইন হয়েছে!');
-      window.location.href = '/';
+      navigate('/', { replace: true });
     } catch (error: any) {
       if (error.code === 'auth/popup-closed-by-user') {
         toast.error('লগইন উইন্ডোটি বন্ধ করে দেওয়া হয়েছে।');
@@ -87,11 +88,11 @@ export default function Login() {
           const result = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
           await bootstrapUser(result.user.uid, name, null);
           toast.success('সফলভাবে অ্যাকাউন্ট তৈরি হয়েছে!');
-          window.location.href = '/';
+          navigate('/', { replace: true });
         } else {
           await signInWithEmailAndPassword(auth, trimmedEmail, password);
           toast.success('সফলভাবে লগইন হয়েছে!');
-          window.location.href = '/';
+          navigate('/', { replace: true });
         }
       } catch (error: any) {
         console.error("Auth error details:", error);
