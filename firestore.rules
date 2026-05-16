@@ -1,0 +1,197 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitives
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // Validation Helpers
+    function isValidUser(data) {
+      return data.userId == request.auth.uid
+        && data.get('name', '') is string
+        && data.get('phone', '') is string
+        && data.get('farmName', '') is string;
+    }
+
+    function isValidBatch(data) {
+      return data.size() >= 6 && data.size() <= 15
+        && data.userId == request.auth.uid
+        && data.batchName is string && data.batchName.size() <= 100
+        && data.startDate is string
+        && data.totalChicks is number
+        && data.status in ["active", "completed"]
+        && data.createdAt is string;
+    }
+
+    function isValidFeedRecord(data) {
+      return data.size() >= 6 && data.size() <= 15
+        && data.userId == request.auth.uid
+        && data.batchId is string
+        && data.date is string
+        && data.get('feedType', '') is string
+        && data.quantityBags is number
+        && data.cost is number
+        && data.get('pricePerBag', 0) is number
+        && data.get('amountPaid', 0) is number
+        && data.get('personName', '') is string
+        && data.get('details', '') is string
+        && data.createdAt is string;
+    }
+
+    function isValidMedicineRecord(data) {
+      return data.size() >= 7 && data.size() <= 15
+        && data.userId == request.auth.uid
+        && data.batchId is string
+        && data.date is string
+        && data.medicineName is string
+        && data.type in ["medicine", "vaccine"]
+        && data.cost is number
+        && data.get('amountPaid', 0) is number
+        && data.get('personName', '') is string
+        && data.get('details', '') is string
+        && data.createdAt is string;
+    }
+
+    function isValidExpense(data) {
+      return data.size() >= 5 && data.size() <= 15
+        && data.userId == request.auth.uid
+        && data.batchId is string
+        && data.date is string
+        && data.amount is number
+        && data.get('amountPaid', 0) is number
+        && data.get('personName', '') is string
+        && data.get('details', '') is string
+        && data.get('category', '') is string
+        && data.createdAt is string;
+    }
+
+    function isValidMortality(data) {
+      return data.size() >= 5 && data.size() <= 10
+        && data.userId == request.auth.uid
+        && data.batchId is string
+        && data.date is string
+        && data.count is number
+        && data.createdAt is string;
+    }
+
+    function isValidSale(data) {
+      return data.size() >= 7 && data.size() <= 18
+        && data.userId == request.auth.uid
+        && data.batchId is string
+        && data.date is string
+        && data.totalWeightKg is number
+        && data.pricePerKg is number
+        && data.totalAmount is number
+        && data.get('numberOfChickens', 0) is number
+        && data.get('buyerName', '') is string
+        && data.get('amountPaid', 0) is number
+        && data.createdAt is string;
+    }
+
+    function isValidWeightRecord(data) {
+      return data.size() >= 6 && data.size() <= 10
+        && data.userId == request.auth.uid
+        && data.batchId is string
+        && data.date is string
+        && data.ageDays is number
+        && data.averageWeight is number
+        && data.get('totalBirdsSampled', 0) is number
+        && data.createdAt is string;
+    }
+
+    function isValidDue(data) {
+      return data.size() >= 6 && data.size() <= 13
+        && data.userId == request.auth.uid
+        && data.personName is string
+        && data.type in ["payable", "receivable"]
+        && data.amount is number
+        && data.get('totalPaid', 0) is number
+        && data.status in ["pending", "paid"]
+        && data.get('phone', '') is string
+        && data.get('details', '') is string
+        && data.get('recordDate', '') is string
+        && data.get('updatedAt', '') is string
+        && data.get('payments', []) is list
+        && data.createdAt is string;
+    }
+
+    // Rules
+    match /users/{userId} {
+      allow read: if isSignedIn() && userId == request.auth.uid;
+      allow create: if isSignedIn() && userId == request.auth.uid && isValidUser(incoming());
+      allow update: if isSignedIn() && userId == request.auth.uid && isValidUser(incoming());
+    }
+
+    match /batches/{batchId} {
+      allow read: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(batchId) && isValidBatch(incoming());
+      allow update: if isSignedIn() && isValidId(batchId) && isValidBatch(incoming())
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['batchName', 'startDate', 'totalChicks', 'costPerChick', 'status', 'updatedAt']);
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /feed_records/{recordId} {
+      allow read: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(recordId) && isValidFeedRecord(incoming());
+      allow update: if false; // Immutable feed records usually, or could add update rule
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /medicine_records/{recordId} {
+      allow read: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(recordId) && isValidMedicineRecord(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /expenses/{expenseId} {
+      allow read: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(expenseId) && isValidExpense(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /mortality/{recordId} {
+      allow read: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(recordId) && isValidMortality(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /sales/{saleId} {
+      allow read: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(saleId) && isValidSale(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /weight_records/{recordId} {
+      allow read: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(recordId) && isValidWeightRecord(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /dues/{dueId} {
+      allow read: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(dueId) && isValidDue(incoming());
+      allow update: if isSignedIn() && isValidId(dueId) && isValidDue(incoming())
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['personName', 'phone', 'type', 'amount', 'totalPaid', 'details', 'recordDate', 'status', 'updatedAt', 'payments']);
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+  }
+}

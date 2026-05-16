@@ -1,0 +1,8 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="120" fill="#f97316"/>
+  <!-- stylized egg -->
+  <path d="M256 100 C 170 100 130 240 130 330 C 130 400 180 440 256 440 C 332 440 382 400 382 330 C 382 240 342 100 256 100 Z" fill="#ffffff"/>
+  <!-- decorative lines -->
+  <path d="M200 300 Q 256 360 312 300" stroke="#f97316" stroke-width="24" fill="none" stroke-linecap="round"/>
+  <path d="M220 360 Q 256 400 292 360" stroke="#f97316" stroke-width="24" fill="none" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,159 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A farmer using the app",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "createdAt"]
+    },
+    "Batch": {
+      "title": "Batch",
+      "description": "A batch of broiler chickens",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "batchName": { "type": "string" },
+        "startDate": { "type": "string" },
+        "totalChicks": { "type": "number" },
+        "costPerChick": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "completed"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "batchName", "startDate", "totalChicks", "status", "createdAt"]
+    },
+    "FeedRecord": {
+      "title": "FeedRecord",
+      "description": "Feed consumption record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "batchId": { "type": "string" },
+        "date": { "type": "string" },
+        "feedType": { "type": "string" },
+        "quantityBags": { "type": "number" },
+        "cost": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "batchId", "date", "quantityBags", "cost", "createdAt"]
+    },
+    "MedicineRecord": {
+      "title": "MedicineRecord",
+      "description": "Medicine or Vaccine usage",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "batchId": { "type": "string" },
+        "date": { "type": "string" },
+        "medicineName": { "type": "string" },
+        "type": { "type": "string", "enum": ["medicine", "vaccine"] },
+        "cost": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "batchId", "date", "medicineName", "type", "cost", "createdAt"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Daily/Other expenses",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "batchId": { "type": "string" },
+        "date": { "type": "string" },
+        "category": { "type": "string" },
+        "amount": { "type": "number" },
+        "details": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "batchId", "date", "amount", "createdAt"]
+    },
+    "Mortality": {
+      "title": "Mortality",
+      "description": "Number of dead chickens",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "batchId": { "type": "string" },
+        "date": { "type": "string" },
+        "count": { "type": "number" },
+        "cause": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "batchId", "date", "count", "createdAt"]
+    },
+    "Sale": {
+      "title": "Sale",
+      "description": "Chicken sales record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "batchId": { "type": "string" },
+        "date": { "type": "string" },
+        "totalWeightKg": { "type": "number" },
+        "pricePerKg": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "buyerName": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "batchId", "date", "totalWeightKg", "pricePerKg", "totalAmount", "createdAt"]
+    },
+    "Due": {
+      "title": "Due",
+      "description": "Outstanding dues / payments",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "personName": { "type": "string" },
+        "phone": { "type": "string" },
+        "type": { "type": "string", "enum": ["payable", "receivable"] },
+        "amount": { "type": "number" },
+        "details": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "paid"] },
+        "recordDate": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "personName", "type", "amount", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "User" },
+      "description": "User profiles"
+    },
+    "batches/{batchId}": {
+      "schema": { "$ref": "Batch" },
+      "description": "Chicken batches"
+    },
+    "feed_records/{recordId}": {
+      "schema": { "$ref": "FeedRecord" },
+      "description": "Feed consumption records"
+    },
+    "medicine_records/{recordId}": {
+      "schema": { "$ref": "MedicineRecord" },
+      "description": "Medicine and vaccine records"
+    },
+    "expenses/{expenseId}": {
+      "schema": { "$ref": "Expense" },
+      "description": "Daily expense records"
+    },
+    "mortality/{recordId}": {
+      "schema": { "$ref": "Mortality" },
+      "description": "Mortality records"
+    },
+    "sales/{saleId}": {
+      "schema": { "$ref": "Sale" },
+      "description": "Chicken sales"
+    },
+    "dues/{dueId}": {
+      "schema": { "$ref": "Due" },
+      "description": "Tracking dues payable or receivable"
+    }
+  }
+}

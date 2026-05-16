@@ -1,0 +1,6 @@
+{
+  "name": "Remix: sufian",
+  "description": "Business management application featuring partial payment tracking for purchases, expense descriptions, and stable Firebase authentication.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
