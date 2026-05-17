@@ -38,7 +38,7 @@ export default function Sales() {
     try {
       const batchesQuery = query(collection(db, 'batches'), where('userId', '==', currentUser.uid));
       const batchSnap = await getDocs(batchesQuery);
-      const batches = batchSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const batches: any[] = batchSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setActiveBatches(batches);
       if(batches.length > 0) {
         setBatchId(batches[0].id);

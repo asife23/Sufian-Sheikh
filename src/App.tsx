@@ -19,7 +19,7 @@ import Sales from './views/Sales';
 import Dues from './views/Dues';
 import Reports from './views/Reports';
 import Profile from './views/Profile';
-import Weight from './views/Weight';
+import Guidelines from './views/Guidelines';
 import PrivacyPolicy from './views/PrivacyPolicy';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -44,7 +44,7 @@ function AppRoutes() {
           <Route path="dues" element={<Dues />} />
           <Route path="reports" element={<Reports />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="weight" element={<Weight />} />
+          <Route path="guidelines" element={<Guidelines />} />
         </Route>
       </Routes>
     </Router>
