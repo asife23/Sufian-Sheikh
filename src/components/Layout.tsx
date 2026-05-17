@@ -3,7 +3,6 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Home, Package, ClipboardList, Wallet, FileText, Menu, AlertTriangle, ShieldPlus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Toaster } from 'react-hot-toast';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -36,7 +35,6 @@ export default function Layout() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 pb-16">
-      <Toaster position="top-center" />
       
       {/* Top Bar */}
       <header className="bg-green-600 text-white shadow-md sticky top-0 z-10">

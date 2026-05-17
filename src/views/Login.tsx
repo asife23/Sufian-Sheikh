@@ -27,12 +27,6 @@ export default function Login() {
 
   const bootstrapUser = async (uid: string, displayName: string | null = null, phone: string | null = null) => {
     const userRef = doc(db, 'users', uid);
-    // Use setDoc with merge: true but only for fields that shouldn't be overwritten if they exist
-    // Actually, it's better to fetch first to check if user exists.
-    // However, to avoid an extra read if not necessary, we can just use setDoc with merge for fields.
-    // BUT we don't want to overwrite the name, phone, or createdAt if they exist.
-    // Setting merge: true will overwrite them. 
-    // Let's retrieve the doc first.
     try {
       const snap = await getDoc(userRef);
       if (!snap.exists()) {
@@ -40,6 +34,7 @@ export default function Login() {
           userId: uid,
           name: displayName || 'খামারি',
           phone: phone || '',
+          farmName: '',
           createdAt: new Date().toISOString()
         });
       }
@@ -100,12 +95,14 @@ export default function Login() {
         toast.error('এই ইমেইলটি আগে থেকেই ব্যবহৃত হচ্ছে।');
       } else if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
         toast.error('ইমেইল অথবা পাসওয়ার্ড ভুল।');
+      } else if (error.code === 'auth/invalid-email') {
+        toast.error('ইমেইলের ঠিকানাটি সঠিক নয়।');
       } else if (error.code === 'auth/weak-password') {
         toast.error('পাসওয়ার্ড খুব সহজ, অন্তত ৬ অক্ষরের হতে হবে।');
       } else if (error.code === 'auth/operation-not-allowed') {
-        toast.error('ইমেইল/পাসওয়ার্ড লগইন Firebase Console-এ চালু করা নেই। দয়া করে Authentication -> Sign-in method থেকে Email/Password চালু করুন।');
+        toast.error('ইমেইল/পাসওয়ার্ড লগইন চালু করা নেই। গুগল লগইন ব্যবহার করুন।');
       } else {
-        toast.error('Error: ' + error.message);
+        toast.error('সমস্যা হয়েছে: ' + (error.message || 'দয়া করে আবার চেষ্টা করুন।'));
       }
     } finally {
       setLoading(false);

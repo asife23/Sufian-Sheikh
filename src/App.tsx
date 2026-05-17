@@ -7,6 +7,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import Login from './views/Login';
 import Dashboard from './views/Dashboard';
@@ -55,6 +56,7 @@ export default function App() {
   return (
     <AuthProvider>
       <LanguageProvider>
+        <Toaster position="top-center" />
         <AppRoutes />
       </LanguageProvider>
     </AuthProvider>
