@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { BarChart3, TrendingDown, TrendingUp, AlertCircle, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -10,6 +11,7 @@ import toast from 'react-hot-toast';
 
 export default function Reports() {
   const { currentUser } = useAuth();
+  const { t } = useLanguage();
   const [activeBatches, setActiveBatches] = useState<any[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -89,7 +91,7 @@ export default function Reports() {
     }
   };
 
-  if (loading && !selectedBatchId) return <div>লোড হচ্ছে...</div>;
+  if (loading && !selectedBatchId) return <div>{t('common.loading')}</div>;
 
   const selectedBatch = activeBatches.find(b => b.id === selectedBatchId);
   const originalChicksTotalCost = selectedBatch ? (selectedBatch.totalChicks * selectedBatch.costPerChick) : 0;
@@ -127,7 +129,7 @@ export default function Reports() {
     });
 
     doc.save(`${selectedBatch.batchName}_Report.pdf`);
-    toast.success('PDF ডাউনলোড শুরু হয়েছে');
+    toast.success(t('reports.pdfStarted'));
   };
 
   const generateCSV = () => {
@@ -153,7 +155,7 @@ export default function Reports() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success('CSV ডাউনলোড শুরু হয়েছে');
+    toast.success(t('reports.csvStarted'));
   };
 
   return (
@@ -161,7 +163,7 @@ export default function Reports() {
       <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <BarChart3 className="text-indigo-600" />
-          <h2 className="text-xl font-bold text-gray-800">রিপোর্টস অ্যানালাইসিস</h2>
+          <h2 className="text-xl font-bold text-gray-800">{t('reports.title')}</h2>
         </div>
         {selectedBatchId && (
           <div className="flex gap-2">
@@ -176,10 +178,10 @@ export default function Reports() {
       </div>
 
       <div className="bg-white p-4 rounded-xl shadow border border-indigo-100">
-        <label className="block text-sm font-medium text-gray-700 mb-2">ব্যাচ নির্বাচন করুন</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">{t('reports.selectBatch')}</label>
         <select value={selectedBatchId} onChange={(e) => setSelectedBatchId(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 font-medium text-gray-800 bg-gray-50">
           {activeBatches.map(b => (
-            <option key={b.id} value={b.id}>{b.batchName} ({b.status === 'active' ? 'চলমান' : 'সম্পন্ন'})</option>
+            <option key={b.id} value={b.id}>{b.batchName} ({b.status === 'active' ? t('feed.statusActive') : t('feed.statusCompleted')})</option>
           ))}
         </select>
       </div>
@@ -188,7 +190,7 @@ export default function Reports() {
         <div className="space-y-4">
           <div className={`p-5 rounded-2xl text-white shadow-md ${finalNetProfit >= 0 ? 'bg-gradient-to-br from-green-500 to-green-600' : 'bg-gradient-to-br from-red-500 to-red-600'}`}>
             <h3 className="text-white/80 text-sm mb-1 font-medium flex items-center justify-between">
-              নীট {finalNetProfit >= 0 ? 'লাভ (Profit)' : 'ক্ষতি (Loss)'} 
+              {finalNetProfit >= 0 ? t('reports.netProfit') : t('reports.netLoss')} 
               {finalNetProfit >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
             </h3>
             <p className="text-4xl font-bold">৳ {Math.abs(finalNetProfit).toLocaleString()}</p>
@@ -196,38 +198,38 @@ export default function Reports() {
 
           <div className="grid grid-cols-2 gap-3">
              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                <p className="text-xs text-gray-500 mb-1">মোট বিক্রয়</p>
+                <p className="text-xs text-gray-500 mb-1">{t('reports.totalIncome')}</p>
                 <p className="text-lg font-bold text-teal-600">৳ {totalSales.toLocaleString()}</p>
              </div>
              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                <p className="text-xs text-gray-500 mb-1">মোট খরচ</p>
+                <p className="text-xs text-gray-500 mb-1">{t('reports.grandTotalCost')}</p>
                 <p className="text-lg font-bold text-red-600">৳ {grandTotalCost.toLocaleString()}</p>
              </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
              <div className="bg-gray-50 p-3 border-b border-gray-100 font-bold text-gray-700">
-                খরচের বিস্তারিত
+                {t('reports.breakdown')}
              </div>
              <div className="p-4 space-y-3">
                 <div className="flex justify-between items-center text-sm">
-                   <span className="text-gray-600">প্রাথমিক ক্রয় বাবদ</span>
+                   <span className="text-gray-600">{t('reports.costBuy')}</span>
                    <span className="font-semibold text-gray-800">৳ {originalChicksTotalCost.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                   <span className="text-gray-600">খাবার খরচ</span>
+                   <span className="text-gray-600">{t('reports.costFeed')}</span>
                    <span className="font-semibold text-gray-800">৳ {totalFeedCost.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                   <span className="text-gray-600">ঔষধ ও ভ্যাকসিন</span>
+                   <span className="text-gray-600">{t('reports.costMedicine')}</span>
                    <span className="font-semibold text-gray-800">৳ {totalMedicineCost.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                   <span className="text-gray-600">অন্যান্য খরচ</span>
+                   <span className="text-gray-600">{t('reports.costOther')}</span>
                    <span className="font-semibold text-gray-800">৳ {totalExpenses.toLocaleString()}</span>
                 </div>
                 <div className="border-t border-gray-200 pt-2 flex justify-between items-center">
-                   <span className="font-bold text-gray-800">মোট খরচ</span>
+                   <span className="font-bold text-gray-800">{t('reports.grandTotalCost')}</span>
                    <span className="font-bold text-red-600">৳ {grandTotalCost.toLocaleString()}</span>
                 </div>
              </div>
@@ -238,10 +240,10 @@ export default function Reports() {
                <AlertCircle size={20} />
             </div>
             <div>
-               <h4 className="font-bold text-orange-800">মৃত্যুহার</h4>
+               <h4 className="font-bold text-orange-800">{t('reports.healthSummary')}</h4>
                <p className="text-sm text-orange-700 mt-1">
-                 এই ব্যাচে মোট <strong>{totalMortality} টি</strong> মারা গেছে।
-                 {selectedBatch && selectedBatch.totalChicks > 0 && ` যা মূল সংখ্যার ${((totalMortality / selectedBatch.totalChicks) * 100).toFixed(2)}%`}
+                 {t('reports.totalMortality')}: <strong>{totalMortality}</strong> 
+                 {selectedBatch && selectedBatch.totalChicks > 0 && ` (${((totalMortality / selectedBatch.totalChicks) * 100).toFixed(2)}%)`}
                </p>
             </div>
           </div>

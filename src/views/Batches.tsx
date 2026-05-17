@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Package, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ConfirmModal } from '../components/ConfirmModal';
 
 const BatchSummary = ({ batchId, totalChicks, costPerChick }: { batchId: string, totalChicks: number, costPerChick: number }) => {
   const { currentUser } = useAuth();
+  const { t } = useLanguage();
   const [totalSales, setTotalSales] = useState(0);
   const [totalCost, setTotalCost] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -55,22 +57,22 @@ const BatchSummary = ({ batchId, totalChicks, costPerChick }: { batchId: string,
     fetchSummary();
   }, [batchId, currentUser, totalChicks, costPerChick]);
 
-  if (loading) return <div className="text-xs text-gray-400 mt-2">হিসাব লোড হচ্ছে...</div>;
+  if (loading) return <div className="text-xs text-gray-400 mt-2">{t('batches.calculating')}</div>;
 
   const profit = totalSales - totalCost;
 
   return (
     <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm">
       <div className="flex justify-between mb-1">
-        <span className="text-gray-600">মোট বিক্রয়:</span>
+        <span className="text-gray-600">{t('batches.totalSales')}</span>
         <span className="font-bold text-teal-600">৳ {totalSales.toLocaleString()}</span>
       </div>
       <div className="flex justify-between mb-1">
-        <span className="text-gray-600">মোট খরচ:</span>
+        <span className="text-gray-600">{t('batches.totalCost')}</span>
         <span className="font-bold text-red-600">৳ {totalCost.toLocaleString()}</span>
       </div>
       <div className="border-t border-gray-300 mt-2 pt-2 flex justify-between font-bold text-base">
-        <span>নীট {profit >= 0 ? 'লাভ (Profit)' : 'ক্ষতি (Loss)'}:</span>
+        <span>{t('batches.net')}{profit >= 0 ? t('batches.profit') : t('batches.loss')}</span>
         <span className={profit >= 0 ? 'text-green-600' : 'text-red-600'}>৳ {Math.abs(profit).toLocaleString()}</span>
       </div>
     </div>
@@ -80,6 +82,7 @@ const BatchSummary = ({ batchId, totalChicks, costPerChick }: { batchId: string,
 export default function Batches() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { currentUser } = useAuth();
+  const { t } = useLanguage();
   const [batches, setBatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -138,7 +141,7 @@ export default function Batches() {
       };
 
       await addDoc(collection(db, 'batches'), newBatch);
-      toast.success('নতুন ব্যাচ যোগ করা হয়েছে!');
+      toast.success(t('batches.addSuccess'));
       setShowForm(false);
       setBatchName('');
       setFarmType('poultry');
@@ -146,7 +149,7 @@ export default function Batches() {
       setCostPerChick('');
       fetchBatches();
     } catch (error) {
-      toast.error('ব্যাচ যোগ করতে সমস্যা হয়েছে।');
+      toast.error(t('batches.addError'));
       handleFirestoreError(error, OperationType.CREATE, 'batches');
     } finally {
       setIsSubmitting(false);
@@ -162,11 +165,11 @@ export default function Batches() {
         status: 'completed',
         updatedAt: new Date().toISOString()
       });
-      toast.success('ব্যাচ সম্পন্ন হয়েছে।');
+      toast.success(t('batches.completeSuccess'));
       setCompleteBatchId(null);
       fetchBatches();
     } catch (error) {
-      toast.error('আপডেট করতে সমস্যা হয়েছে।');
+      toast.error(t('batches.updateError'));
       handleFirestoreError(error, OperationType.UPDATE, `batches/${completeBatchId}`);
       setCompleteBatchId(null);
     }
@@ -180,23 +183,23 @@ export default function Batches() {
     if (!deleteId) return;
     try {
       await deleteDoc(doc(db, 'batches', deleteId));
-      toast.success('ব্যাচ মুছে ফেলা হয়েছে!', { duration: 3000 });
+      toast.success(t('batches.delSuccess'), { duration: 3000 });
       fetchBatches();
     } catch (error) {
-      toast.error('মুছে ফেলতে সমস্যা হয়েছে।');
+      toast.error(t('batches.delError'));
       handleFirestoreError(error, OperationType.DELETE, 'batches');
     } finally {
       setDeleteId(null);
     }
   };
 
-  if (loading) return <div>লোড হচ্ছে...</div>;
+  if (loading) return <div>{t('common.loading')}</div>;
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-100">
         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-          <Package className="text-green-600" /> ব্যাচ ম্যানেজমেন্ট
+          <Package className="text-green-600" /> {t('batches.title')}
         </h2>
         <button 
           onClick={() => setShowForm(!showForm)}
@@ -209,33 +212,33 @@ export default function Batches() {
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white p-4 rounded-xl shadow border border-green-100 space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ব্যাচের নাম</label>
-            <input required type="text" value={batchName} onChange={(e) => setBatchName(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none" placeholder="যেমন: ব্যাচ ১" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('batches.batchNameLabel')}</label>
+            <input required type="text" value={batchName} onChange={(e) => setBatchName(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none" placeholder={t('batches.batchNamePlaceholder')} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">খামারের ধরন</label>
-            <select required value={farmType} onChange={(e) => setFarmType(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none">
-              <option value="poultry">মুরগি / হাঁস / পাখি</option>
-              <option value="cattle">গরু / ছাগল / মহিষ</option>
-              <option value="fish">মাছ</option>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('batches.farmType')}</label>
+            <select required value={farmType} onChange={(e) => setFarmType(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none bg-white">
+              <option value="poultry">{t('batches.poultry')}</option>
+              <option value="cattle">{t('batches.cattle')}</option>
+              <option value="fish">{t('batches.fish')}</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">শুরুর তারিখ</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('batches.startDate')}</label>
             <input required type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">মোট সংখ্যা</label>
-              <input required type="number" value={totalChicks} onChange={(e) => setTotalChicks(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none" placeholder="সংখ্যা" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('batches.totalChicks')}</label>
+              <input required type="number" value={totalChicks} onChange={(e) => setTotalChicks(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none" placeholder="0" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">প্রতিটির ক্রয়মূল্য (৳)</label>
-              <input type="number" value={costPerChick} onChange={(e) => setCostPerChick(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none" placeholder="দাম" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('batches.costPerChick')}</label>
+              <input type="number" value={costPerChick} onChange={(e) => setCostPerChick(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none" placeholder="0" />
             </div>
           </div>
           <button disabled={isSubmitting} type="submit" className="w-full bg-green-600 text-white font-bold py-3 rounded-xl mt-2 disabled:bg-gray-400">
-            {isSubmitting ? 'সংরক্ষণ হচ্ছে...' : 'সংরক্ষণ করুন'}
+            {isSubmitting ? t('common.saving') : t('common.save')}
           </button>
         </form>
       )}
@@ -253,21 +256,21 @@ export default function Batches() {
               <div>
                 <h3 className="font-bold text-lg">{batch.batchName}</h3>
                 <p className="text-xs text-gray-500">
-                  {batch.farmType === 'cattle' ? 'গরু/ছাগল' : batch.farmType === 'fish' ? 'মাছ' : 'হাঁস/মুরগি'} • শুরু: {new Date(batch.startDate).toLocaleDateString()}
+                  {batch.farmType === 'cattle' ? t('batches.cattle') : batch.farmType === 'fish' ? t('batches.fish') : t('batches.poultry')} • {t('batches.started')} {new Date(batch.startDate).toLocaleDateString()}
                 </p>
               </div>
               <span className={`px-2 py-1 text-xs font-bold rounded-full ${batch.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                {batch.status === 'active' ? 'চলমান' : 'সম্পন্ন'}
+                {batch.status === 'active' ? t('batches.active') : t('batches.completed')}
               </span>
             </div>
             <div className="text-sm bg-gray-50 p-2 rounded my-2">
-              <span className="font-semibold text-gray-700">মোট সংখ্যা: </span> {batch.totalChicks} টি <br/>
-              <span className="font-semibold text-gray-700">ক্রয়মূল্য: </span> ৳ {batch.costPerChick} (প্রতিটি)
+              <span className="font-semibold text-gray-700">{t('batches.totalChicks')}: </span> {batch.totalChicks} {t('batches.chicksItem')} <br/>
+              <span className="font-semibold text-gray-700">{t('batches.costPerChick')}: </span> ৳ {batch.costPerChick} {t('batches.currencyPerItem')}
             </div>
             {batch.status === 'active' && (
                <div className="mt-3 text-right">
                  <button onClick={() => setCompleteBatchId(batch.id)} className="text-sm border border-red-500 text-red-600 px-3 py-1 rounded hover:bg-red-50">
-                    ব্যাচ শেষ করুন
+                    {t('batches.markComplete')}
                  </button>
                </div>
             )}
@@ -279,23 +282,23 @@ export default function Batches() {
         
         {batches.length === 0 && !showForm && (
           <div className="text-center text-gray-500 py-10 bg-white rounded-xl border border-dashed border-gray-300">
-            কোনো ব্যাচ পাওয়া যায়নি। নতুন ব্যাচ যোগ করুন।
+            {t('batches.noBatches')}
           </div>
         )}
       </div>
 
       <ConfirmModal 
         isOpen={!!completeBatchId}
-        title="ব্যাচ শেষ করার নিশ্চিতকরণ"
-        message="আপনি কি নিশ্চিত যে এই ব্যাচটি সম্পন্ন করতে চান?"
+        title={t('batches.confirmCompleteTitle')}
+        message={t('batches.confirmCompleteMsg')}
         onConfirm={markCompleted}
         onCancel={() => setCompleteBatchId(null)}
       />
     
       <ConfirmModal 
         isOpen={!!deleteId}
-        title="মুছে ফেলার নিশ্চিতকরণ"
-        message="আপনি কি নিশ্চিত যে আপনি এটি মুছে ফেলতে চান?"
+        title={t('common.confirmDelete')}
+        message={t('common.confirmDeleteMsg')}
         onConfirm={executeDelete}
         onCancel={() => setDeleteId(null)}
       />

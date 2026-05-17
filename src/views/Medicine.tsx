@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, getDocs, addDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { ShieldPlus, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -9,6 +10,7 @@ import { ConfirmModal } from '../components/ConfirmModal';
 export default function Medicine() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { currentUser } = useAuth();
+  const { t } = useLanguage();
   const [records, setRecords] = useState<any[]>([]);
   const [activeBatches, setActiveBatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,10 +60,10 @@ export default function Medicine() {
     if (!deleteId) return;
     try {
       await deleteDoc(doc(db, 'medicine_records', deleteId));
-      toast.success('মুছে ফেলা হয়েছে!', { duration: 3000 });
+      toast.success(t('common.success'), { duration: 3000 });
       fetchInitialData();
     } catch (error) {
-      toast.error('মুছে ফেলতে সমস্যা হয়েছে।');
+      toast.error(t('common.error'));
       handleFirestoreError(error, OperationType.DELETE, 'medicine_records');
     } finally {
       setDeleteId(null);
@@ -70,7 +72,7 @@ export default function Medicine() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser || !batchId) return toast.error('ব্যাচ নির্বাচন করুন');
+    if (!currentUser || !batchId) return toast.error(t('feed.batchSelectionReq'));
     if (isSubmitting || submitLock.current) return;
 
     const totalAmountVal = Number(cost);
@@ -78,7 +80,7 @@ export default function Medicine() {
     const paidVal = Math.min(paidValRaw, totalAmountVal);
 
     if (paidVal < totalAmountVal && !personName.trim()) {
-      return toast.error('বাকি থাকলে যাকে দিবেন তার নাম লিখতে হবে!');
+      return toast.error(t('feed.dueNameReq'));
     }
 
     setIsSubmitting(true);
@@ -102,7 +104,8 @@ export default function Medicine() {
 
       if (paidVal < totalAmountVal) {
         const batchName = activeBatches.find(b => b.id === batchId)?.batchName || 'Unknown Batch';
-        const typeName = type === 'vaccine' ? 'ভ্যাকসিন' : 'ঔষধ';
+        const typeName = type === 'vaccine' ? t('medicine.vaccine') : t('medicine.medicine');
+        const formattedDetails = details ? '('+details+')' : '';
         const dueRecord = {
           userId: currentUser.uid,
           personName,
@@ -110,7 +113,7 @@ export default function Medicine() {
           type: 'payable',
           amount: totalAmountVal,
           totalPaid: paidVal,
-          details: `${batchName} এর ${typeName}: ${medicineName} ${details ? '('+details+')' : ''}`,
+          details: `${batchName}${t('medicine.recordVal').replace('{type}', typeName).replace('{name}', medicineName).replace('{details}', formattedDetails)}`,
           recordDate: date,
           status: 'pending',
           createdAt: new Date().toISOString(),
@@ -119,7 +122,7 @@ export default function Medicine() {
         await addDoc(collection(db, 'dues'), dueRecord);
       }
 
-      toast.success('রেকর্ড যোগ করা হয়েছে!');
+      toast.success(t('medicine.addSuccess'));
       setShowForm(false);
       setMedicineName('');
       setCost('');
@@ -129,7 +132,7 @@ export default function Medicine() {
       setPersonPhone('');
       fetchInitialData();
     } catch (error) {
-      toast.error('যোগ করতে সমস্যা হয়েছে।');
+      toast.error(t('common.error'));
       handleFirestoreError(error, OperationType.CREATE, 'medicine_records');
     } finally {
       setIsSubmitting(false);
@@ -137,7 +140,7 @@ export default function Medicine() {
     }
   };
 
-  if (loading) return <div>লোড হচ্ছে...</div>;
+  if (loading) return <div>{t('common.loading')}</div>;
 
   const currentTotalAmount = Number(cost) || 0;
   const currentPaidRaw = amountPaid !== '' ? Number(amountPaid) : currentTotalAmount;
@@ -148,7 +151,7 @@ export default function Medicine() {
     <div className="space-y-4">
       <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-100">
         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-          <ShieldPlus className="text-blue-500" /> ঔষধ এবং ভ্যাকসিন
+          <ShieldPlus className="text-blue-500" /> {t('medicine.title')}
         </h2>
         <button 
           onClick={() => setShowForm(!showForm)}
@@ -161,57 +164,57 @@ export default function Medicine() {
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white p-4 rounded-xl shadow border border-blue-100 space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ব্যাচ</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('medicine.batchLabel')}</label>
             <select required value={batchId} onChange={(e) => setBatchId(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
-              <option value="">নির্বাচন করুন...</option>
+              <option value="">{t('feed.selectOption')}</option>
               {activeBatches.map(b => <option key={b.id} value={b.id}>{b.batchName}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">তারিখ</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('medicine.dateLabel')}</label>
               <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ধরন</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('medicine.typeLabel')}</label>
               <select required value={type} onChange={(e) => setType(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
-                <option value="medicine">ঔষধ (Medicine)</option>
-                <option value="vaccine">ভ্যাকসিন (Vaccine)</option>
+                <option value="medicine">{t('medicine.optMedicine')}</option>
+                <option value="vaccine">{t('medicine.optVaccine')}</option>
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">নাম/বিবরণ</label>
-            <input required type="text" value={medicineName} onChange={(e) => setMedicineName(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" placeholder="ঔষধ বা ভ্যাকসিনের নাম" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('medicine.nameDescLabel')}</label>
+            <input required type="text" value={medicineName} onChange={(e) => setMedicineName(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" placeholder={t('medicine.nameDescPlaceholder')} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">দোকানের নাম / প্রাপক</label>
-              <input type="text" value={personName} onChange={(e) => setPersonName(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" placeholder="কোথা থেকে কেনা?" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('medicine.shopLabel')}</label>
+              <input type="text" value={personName} onChange={(e) => setPersonName(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" placeholder={t('medicine.shopPlaceholder')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">মোবাইল নম্বর</label>
-              <input type="tel" value={personPhone} onChange={(e) => setPersonPhone(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" placeholder="017xxxxxxxx" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('medicine.mobileLabel')}</label>
+              <input type="tel" value={personPhone} onChange={(e) => setPersonPhone(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" placeholder={t('medicine.mobilePlaceholder')} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">মোট দাম (৳)</label>
-              <input required type="number" value={cost} onChange={(e) => setCost(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" placeholder="সর্বমোট দাম" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('medicine.totalPrice')}</label>
+              <input required type="number" value={cost} onChange={(e) => setCost(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" placeholder={t('medicine.totalPricePlaceholder')} />
             </div>
             <div>
-               <label className="block text-sm font-medium text-gray-700 mb-1">জমা/পরিশোধ (৳)</label>
-               <input type="number" value={amountPaid} onChange={(e) => setAmountPaid(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" placeholder={`ডিফল্ট: ৳ ${currentTotalAmount}`} />
+               <label className="block text-sm font-medium text-gray-700 mb-1">{t('medicine.paidAmt')}</label>
+               <input type="number" value={amountPaid} onChange={(e) => setAmountPaid(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" placeholder={`${t('feed.defaultAmt')}৳ ${currentTotalAmount}`} />
             </div>
           </div>
-          {currentDue > 0 && <p className="text-red-500 text-sm font-semibold">বাকি: ৳ {currentDue} (স্বয়ংক্রিয়ভাবে বকেয়া খাতায় যোগ হবে)</p>}
-          {currentReturnAmount > 0 && <p className="text-green-600 text-sm font-semibold">ফেরত পাবেন: ৳ {currentReturnAmount}</p>}
+          {currentDue > 0 && <p className="text-red-500 text-sm font-semibold">{t('feed.dueMsg')}{currentDue}{t('feed.dueMsgAuto')}</p>}
+          {currentReturnAmount > 0 && <p className="text-green-600 text-sm font-semibold">{t('feed.returnMsg')}{currentReturnAmount}</p>}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">বিবরণ/নোট (ঐচ্ছিক)</label>
-            <input type="text" value={details} onChange={(e) => setDetails(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" placeholder="কী রোগের জন্য?" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('medicine.detailsNote')}</label>
+            <input type="text" value={details} onChange={(e) => setDetails(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" placeholder={t('medicine.detailsPlaceholder')} />
           </div>
           <button disabled={isSubmitting} type="submit" className="w-full bg-blue-500 text-white font-bold py-3 rounded-xl mt-2 disabled:bg-gray-400">
-            {isSubmitting ? 'সংরক্ষণ হচ্ছে...' : 'সংরক্ষণ করুন'}
+            {isSubmitting ? t('medicine.savingBtn') : t('medicine.saveBtn')}
           </button>
         </form>
       )}
@@ -225,17 +228,17 @@ export default function Medicine() {
             <div key={record.id} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-start justify-between">
               <div>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold mb-1 inline-block ${record.type === 'vaccine' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'}`}>
-                  {record.type === 'vaccine' ? 'ভ্যাকসিন' : 'ঔষধ'}
+                  {record.type === 'vaccine' ? t('medicine.vaccine') : t('medicine.medicine')}
                 </span>
                 <h3 className="font-bold text-gray-800">{record.medicineName}</h3>
                 <p className="text-xs text-gray-500">{new Date(record.date).toLocaleDateString()} - {batchName}</p>
-                {record.personName && <p className="text-xs font-semibold text-gray-600 mt-0.5">দোকান: {record.personName}</p>}
+                {record.personName && <p className="text-xs font-semibold text-gray-600 mt-0.5">{t('medicine.shopTxt')}{record.personName}</p>}
                 {record.details && <p className="text-sm text-gray-600 mt-1">{record.details}</p>}
               </div>
               <div className="text-right flex flex-col items-end">
                 <span className="font-bold text-blue-600 text-lg">৳ {record.cost}</span>
-                {rDue > 0 && <span className="text-xs font-semibold text-red-500 outline outline-1 outline-red-200 px-1 rounded mt-1">বাকি: ৳ {rDue}</span>}
-                {rDue === 0 && <span className="text-xs font-semibold text-green-600 outline outline-1 outline-green-200 px-1 rounded mt-1">পরিশোধিত</span>}
+                {rDue > 0 && <span className="text-xs font-semibold text-red-500 outline outline-1 outline-red-200 px-1 rounded mt-1">{t('feed.dueLabel')}{rDue}</span>}
+                {rDue === 0 && <span className="text-xs font-semibold text-green-600 outline outline-1 outline-green-200 px-1 rounded mt-1">{t('feed.paidLabel')}</span>}
                 <button onClick={() => handleDelete(record.id)} className="text-red-500 hover:bg-red-50 p-1 rounded-md mt-1 inline-block">
                   <Trash2 size={16} />
                 </button>
@@ -247,8 +250,8 @@ export default function Medicine() {
     
       <ConfirmModal 
         isOpen={!!deleteId}
-        title="মুছে ফেলার নিশ্চিতকরণ"
-        message="আপনি কি নিশ্চিত যে আপনি এটি মুছে ফেলতে চান?"
+        title={t('common.confirmDelete')}
+        message={t('common.confirmDeleteMsg')}
         onConfirm={executeDelete}
         onCancel={() => setDeleteId(null)}
       />

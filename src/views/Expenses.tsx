@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, getDocs, addDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { TrendingUp, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -9,6 +10,7 @@ import { ConfirmModal } from '../components/ConfirmModal';
 export default function Expenses() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { currentUser } = useAuth();
+  const { t } = useLanguage();
   const [records, setRecords] = useState<any[]>([]);
   const [activeBatches, setActiveBatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +21,7 @@ export default function Expenses() {
   const [batchId, setBatchId] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('বিদ্যুৎ বিল');
+  const [category, setCategory] = useState('');
   const [details, setDetails] = useState('');
   const [personName, setPersonName] = useState('');
   const [personPhone, setPersonPhone] = useState('');
@@ -28,6 +30,10 @@ export default function Expenses() {
   useEffect(() => {
     fetchInitialData();
   }, [currentUser]);
+
+  useEffect(() => {
+    if(!category) setCategory(t('expenses.optElectricity'));
+  }, [t]);
 
   const fetchInitialData = async () => {
     if (!currentUser) return;
@@ -57,10 +63,10 @@ export default function Expenses() {
     if (!deleteId) return;
     try {
       await deleteDoc(doc(db, 'expenses', deleteId));
-      toast.success('মুছে ফেলা হয়েছে!', { duration: 3000 });
+      toast.success(t('common.success'), { duration: 3000 });
       fetchInitialData();
     } catch (error) {
-      toast.error('মুছে ফেলতে সমস্যা হয়েছে।');
+      toast.error(t('common.error'));
       handleFirestoreError(error, OperationType.DELETE, 'expenses');
     } finally {
       setDeleteId(null);
@@ -69,7 +75,7 @@ export default function Expenses() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser || !batchId) return toast.error('ব্যাচ নির্বাচন করুন');
+    if (!currentUser || !batchId) return toast.error(t('feed.batchSelectionReq'));
     if (isSubmitting || submitLock.current) return;
 
     const totalAmountVal = Number(amount);
@@ -77,7 +83,7 @@ export default function Expenses() {
     const paidVal = Math.min(paidValRaw, totalAmountVal);
 
     if (paidVal < totalAmountVal && !personName.trim()) {
-      return toast.error('বাকি থাকলে প্রাপকের (যাকে দিবেন) নাম লিখতে হবে!');
+      return toast.error(t('expenses.missingReceiver'));
     }
 
     setIsSubmitting(true);
@@ -88,7 +94,7 @@ export default function Expenses() {
         userId: currentUser.uid,
         batchId,
         date,
-        category,
+        category: category || t('expenses.optElectricity'),
         amount: totalAmountVal,
         amountPaid: paidVal,
         personName,
@@ -107,7 +113,7 @@ export default function Expenses() {
           type: 'payable',
           amount: totalAmountVal,
           totalPaid: paidVal,
-          details: `${batchName} এর ${category} খরচ: ${details || ''}`,
+          details: `${batchName}${t('expenses.expenseDetails').replace('{category}', category || t('expenses.optElectricity'))}${details || ''}`,
           recordDate: date,
           status: 'pending',
           createdAt: new Date().toISOString(),
@@ -116,7 +122,7 @@ export default function Expenses() {
         await addDoc(collection(db, 'dues'), dueRecord);
       }
 
-      toast.success('খরচ যোগ করা হয়েছে!');
+      toast.success(t('expenses.addSuccess'));
       setShowForm(false);
       setAmount('');
       setAmountPaid('');
@@ -125,7 +131,7 @@ export default function Expenses() {
       setPersonPhone('');
       fetchInitialData();
     } catch (error) {
-      toast.error('যোগ করতে সমস্যা হয়েছে।');
+      toast.error(t('common.error'));
       handleFirestoreError(error, OperationType.CREATE, 'expenses');
     } finally {
       setIsSubmitting(false);
@@ -133,7 +139,7 @@ export default function Expenses() {
     }
   };
 
-  if (loading) return <div>লোড হচ্ছে...</div>;
+  if (loading) return <div>{t('common.loading')}</div>;
 
   const currentTotalAmount = Number(amount) || 0;
   const currentPaidRaw = amountPaid !== '' ? Number(amountPaid) : currentTotalAmount;
@@ -144,7 +150,7 @@ export default function Expenses() {
     <div className="space-y-4">
       <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-100">
         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-          <TrendingUp className="text-purple-600" /> খরচ ব্যবস্থাপনা
+          <TrendingUp className="text-purple-600" /> {t('expenses.title')}
         </h2>
         <button 
           onClick={() => setShowForm(!showForm)}
@@ -158,55 +164,54 @@ export default function Expenses() {
         <form onSubmit={handleSubmit} className="bg-white p-4 rounded-xl shadow border border-purple-100 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ব্যাচ</label>
-              <select required value={batchId} onChange={(e) => setBatchId(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500">
-                <option value="">নির্বাচন করুন...</option>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('medicine.batchLabel')}</label>
+              <select required value={batchId} onChange={(e) => setBatchId(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500 bg-white">
+                <option value="">{t('feed.selectOption')}</option>
                 {activeBatches.map(b => <option key={b.id} value={b.id}>{b.batchName}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">তারিখ</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('medicine.dateLabel')}</label>
               <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500" />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">খরচের খাত</label>
-            <select required value={category} onChange={(e) => setCategory(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500">
-              <option value="বিদ্যুৎ বিল">বিদ্যুৎ বিল</option>
-              <option value="শ্রমিক">শ্রমিক</option>
-              <option value="পরিবহন">পরিবহন</option>
-              <option value="তুষ/কাঠের গুঁড়া">তুষ/কাঠের গুঁড়া</option>
-              <option value="অন্যান্য">অন্যান্য</option>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('expenses.categoryLabel')}</label>
+            <select required value={category} onChange={(e) => setCategory(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500 bg-white">
+              <option value={t('expenses.optElectricity')}>{t('expenses.optElectricity')}</option>
+              <option value={t('expenses.optLabor')}>{t('expenses.optLabor')}</option>
+              <option value={t('expenses.optTransport')}>{t('expenses.optTransport')}</option>
+              <option value={t('expenses.optOther')}>{t('expenses.optOther')}</option>
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">কার কাছে দিয়েছেন? (নাম)</label>
-              <input type="text" value={personName} onChange={(e) => setPersonName(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500" placeholder="যেমন: রহমতের দোকান" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('expenses.receiverLabel')}</label>
+              <input type="text" value={personName} onChange={(e) => setPersonName(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500" placeholder={t('expenses.receiverPlaceholder')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">মোবাইল নম্বর</label>
-              <input type="tel" value={personPhone} onChange={(e) => setPersonPhone(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500" placeholder="017xxxxxxxx" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('medicine.mobileLabel')}</label>
+              <input type="tel" value={personPhone} onChange={(e) => setPersonPhone(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500" placeholder={t('medicine.mobilePlaceholder')} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">মোট টাকার পরিমাণ (৳)</label>
-              <input required type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500" placeholder="মোট পরিমাণ" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('expenses.amount')}</label>
+              <input required type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500" placeholder="0" />
             </div>
             <div>
-               <label className="block text-sm font-medium text-gray-700 mb-1">জমা/পরিশোধ (৳)</label>
-               <input type="number" value={amountPaid} onChange={(e) => setAmountPaid(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500" placeholder={`ডিফল্ট: ৳ ${currentTotalAmount}`} />
+               <label className="block text-sm font-medium text-gray-700 mb-1">{t('medicine.paidAmt')}</label>
+               <input type="number" value={amountPaid} onChange={(e) => setAmountPaid(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500" placeholder={`${t('feed.defaultAmt')}৳ ${currentTotalAmount}`} />
             </div>
           </div>
-          {currentDue > 0 && <p className="text-red-500 text-sm font-semibold">বাকি: ৳ {currentDue} (স্বয়ংক্রিয়ভাবে বকেয়া খাতায় যোগ হবে)</p>}
-          {currentReturnAmount > 0 && <p className="text-green-600 text-sm font-semibold">ফেরত পাবেন: ৳ {currentReturnAmount}</p>}
+          {currentDue > 0 && <p className="text-red-500 text-sm font-semibold">{t('feed.dueMsg')}{currentDue}{t('feed.dueMsgAuto')}</p>}
+          {currentReturnAmount > 0 && <p className="text-green-600 text-sm font-semibold">{t('feed.returnMsg')}{currentReturnAmount}</p>}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">খরচের বিবরণ (ঐচ্ছিক)</label>
-            <input type="text" value={details} onChange={(e) => setDetails(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500" placeholder="কী জন্য খরচ হলো?" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('medicine.detailsNote')}</label>
+            <input type="text" value={details} onChange={(e) => setDetails(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500" placeholder={t('expenses.detailsPlaceholder')} />
           </div>
           <button disabled={isSubmitting} type="submit" className="w-full bg-purple-600 text-white font-bold py-3 rounded-xl mt-2 disabled:bg-gray-400">
-            {isSubmitting ? 'সংরক্ষণ হচ্ছে...' : 'সংরক্ষণ করুন'}
+            {isSubmitting ? t('medicine.savingBtn') : t('medicine.saveBtn')}
           </button>
         </form>
       )}
@@ -220,13 +225,13 @@ export default function Expenses() {
               <div>
                 <h3 className="font-bold text-gray-800">{record.category}</h3>
                 <p className="text-xs text-gray-500">{new Date(record.date).toLocaleDateString()}</p>
-                {record.personName && <p className="text-xs font-semibold text-gray-600 mt-0.5">প্রাপক: {record.personName}</p>}
+                {record.personName && <p className="text-xs font-semibold text-gray-600 mt-0.5">{record.personName}</p>}
                 {record.details && <p className="text-sm text-gray-600 mt-1">{record.details}</p>}
               </div>
               <div className="text-right flex flex-col items-end">
                 <span className="font-bold text-purple-600 text-lg">৳ {record.amount}</span>
-                {rDue > 0 && <span className="text-xs font-semibold text-red-500 outline outline-1 outline-red-200 px-1 rounded mt-1">বাকি: ৳ {rDue}</span>}
-                {rDue === 0 && <span className="text-xs font-semibold text-green-600 outline outline-1 outline-green-200 px-1 rounded mt-1">পরিশোধিত</span>}
+                {rDue > 0 && <span className="text-xs font-semibold text-red-500 outline outline-1 outline-red-200 px-1 rounded mt-1">{t('feed.dueLabel')}{rDue}</span>}
+                {rDue === 0 && <span className="text-xs font-semibold text-green-600 outline outline-1 outline-green-200 px-1 rounded mt-1">{t('feed.paidLabel')}</span>}
                 <button onClick={() => handleDelete(record.id)} className="text-red-500 hover:bg-red-50 p-1 rounded-md mt-1 inline-block">
                   <Trash2 size={16} />
                 </button>
@@ -238,8 +243,8 @@ export default function Expenses() {
     
       <ConfirmModal 
         isOpen={!!deleteId}
-        title="মুছে ফেলার নিশ্চিতকরণ"
-        message="আপনি কি নিশ্চিত যে আপনি এটি মুছে ফেলতে চান?"
+        title={t('common.confirmDelete')}
+        message={t('common.confirmDeleteMsg')}
         onConfirm={executeDelete}
         onCancel={() => setDeleteId(null)}
       />

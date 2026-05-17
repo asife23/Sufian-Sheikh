@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { User, LogOut, CheckCircle, Settings, HelpCircle, Info, Globe, ChevronRight, X, MessageCircle, Phone, Mail, ExternalLink, ShieldCheck } from 'lucide-react';
+import { useLanguage, Language } from '../contexts/LanguageContext';
+import { User, LogOut, CheckCircle, Settings, HelpCircle, Info, Globe, ChevronRight, X, MessageCircle, Phone, Mail, ExternalLink, ShieldCheck, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
   const { currentUser, logout } = useAuth();
+  const { language: currentLanguage, setLanguage: setGlobalLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,9 +18,13 @@ export default function Profile() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [farmName, setFarmName] = useState('');
-  const [language, setLanguage] = useState('bn');
+  const [language, setLanguage] = useState<Language>(currentLanguage);
   const [showDeveloperSupport, setShowDeveloperSupport] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+
+  useEffect(() => {
+    setLanguage(currentLanguage);
+  }, [currentLanguage]);
 
   useEffect(() => {
     if (currentUser) {
@@ -58,6 +64,7 @@ export default function Profile() {
       const docSnap = await getDoc(userRef);
       
       const payload = {
+        userId: currentUser.uid,
         name,
         phone,
         farmName,
@@ -66,18 +73,24 @@ export default function Profile() {
       };
 
       if (docSnap.exists()) {
-        await updateDoc(userRef, payload);
+        await updateDoc(userRef, {
+          name,
+          phone,
+          farmName,
+          language,
+          updatedAt: new Date().toISOString()
+        });
       } else {
         await setDoc(userRef, {
-          userId: currentUser.uid,
           ...payload,
           createdAt: new Date().toISOString()
         });
       }
       
-      toast.success('প্রোফাইল আপডেট হয়েছে!');
+      setGlobalLanguage(language as Language);
+      toast.success(currentLanguage === 'en' ? 'Profile updated!' : 'প্রোফাইল আপডেট হয়েছে!');
     } catch (error) {
-      toast.error('আপডেট করতে সমস্যা হয়েছে।');
+      toast.error(t('common.error'));
       handleFirestoreError(error, OperationType.WRITE, `users/${currentUser.uid}`);
     } finally {
       setIsSubmitting(false);
@@ -91,24 +104,24 @@ export default function Profile() {
       navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
-      toast.error('লগআউট করতে সমস্যা হয়েছে, নেভিগেট করা হচ্ছে...');
+      toast.error(t('common.error'));
       navigate('/login');
     }
   };
 
-  if (loading) return <div className="text-center py-10">লোড হচ্ছে...</div>;
+  if (loading) return <div className="text-center py-10">{t('common.loading')}</div>;
 
   return (
     <div className="space-y-4 pb-4">
       <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-100">
         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-          <Settings className="text-blue-500" /> সেটিংস ও প্রোফাইল
+          <Settings className="text-blue-500" /> {t('menu.profile')}
         </h2>
         <button 
           onClick={handleLogout}
           className="text-red-500 hover:bg-red-50 p-2 rounded-lg flex items-center gap-1 text-sm font-semibold"
         >
-          <LogOut size={18} /> লগআউট 
+          <LogOut size={18} /> {t('profile.logout')} 
         </button>
       </div>
 
@@ -120,26 +133,26 @@ export default function Profile() {
              <User size={40} />
           )}
         </div>
-        <h3 className="font-bold text-lg text-gray-800">{name || 'নাম সেট করা নেই'}</h3>
+        <h3 className="font-bold text-lg text-gray-800">{name || (currentLanguage === 'en' ? 'Name not set' : 'নাম সেট করা নেই')}</h3>
         <p className="text-sm text-gray-500">{currentUser?.email}</p>
       </div>
 
       <form onSubmit={handleSave} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
-        <h3 className="font-bold text-gray-800 border-b pb-2">ব্যক্তিগত তথ্য</h3>
+        <h3 className="font-bold text-gray-800 border-b pb-2">{t('profile.title')}</h3>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">আপনার নাম</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('profile.name')}</label>
           <input 
             type="text" 
             value={name} 
             onChange={(e) => setName(e.target.value)} 
             className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" 
-            placeholder="আপনার সম্পূর্ণ নাম" 
+            placeholder={t('profile.name')} 
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">মোবাইল নাম্বার</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('profile.phone')}</label>
           <input 
             type="tel" 
             value={phone} 
@@ -150,45 +163,47 @@ export default function Profile() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">খামারের নাম</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('profile.farmName')}</label>
           <input 
             type="text" 
             value={farmName} 
             onChange={(e) => setFarmName(e.target.value)} 
             className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" 
-            placeholder="খামারের নাম (ঐচ্ছিক)" 
+            placeholder={t('profile.farmNamePlaceholder')}
+            autoComplete="off"
+            id="farmName-input"
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-             <Globe size={16} className="text-gray-500"/> অ্যাপের ভাষা
+             <Globe size={16} className="text-gray-500"/> {t('profile.appLanguage')}
           </label>
           <select 
             value={language}
-            onChange={(e) => setLanguage(e.target.value)}
+            onChange={(e) => setLanguage(e.target.value as Language)}
             className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 bg-white"
           >
-            <option value="bn">বাংলা</option>
-            <option value="en">English (Coming Soon)</option>
+            <option value="bn">{t('profile.bengali')}</option>
+            <option value="en">{t('profile.english')}</option>
           </select>
         </div>
 
-        <button disabled={isSubmitting} type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-4 flex items-center justify-center gap-2 disabled:bg-gray-400">
-          <CheckCircle size={20} /> {isSubmitting ? 'সেভ হচ্ছে...' : 'সেভ করুন'}
+        <button disabled={isSubmitting} type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6 flex items-center justify-center gap-2 disabled:bg-gray-400">
+          <CheckCircle size={20} /> {isSubmitting ? t('profile.saving') : t('profile.save')}
         </button>
       </form>
 
       {/* Support & About Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-100">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-100 mt-4">
         <button className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors" onClick={() => setShowDeveloperSupport(true)}>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center">
               <HelpCircle size={18} />
             </div>
             <div className="text-left">
-              <p className="font-semibold text-gray-800 text-sm">সাহায্য ও সাপোর্ট</p>
-              <p className="text-xs text-gray-500">ডেভেলপারের সাথে যোগাযোগ করুন</p>
+              <p className="font-semibold text-gray-800 text-sm">{t('profile.support')}</p>
+              <p className="text-xs text-gray-500">{t('profile.supportWait')}</p>
             </div>
           </div>
           <ChevronRight size={20} className="text-gray-400" />
@@ -200,8 +215,19 @@ export default function Profile() {
               <Info size={18} />
             </div>
             <div className="text-left">
-              <p className="font-semibold text-gray-800 text-sm">অ্যাপ সম্পর্কে</p>
-              <p className="text-xs text-gray-500">ডেভেলপার এবং ভার্সন</p>
+              <p className="font-semibold text-gray-800 text-sm">{t('profile.about')}</p>
+              <p className="text-xs text-gray-500">{t('profile.aboutSub')}</p>
+            </div>
+          </div>
+          <ChevronRight size={20} className="text-gray-400" />
+        </button>
+        <button onClick={() => navigate('/privacy-policy')} className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+              <FileText size={18} />
+            </div>
+            <div className="text-left">
+              <p className="font-semibold text-gray-800 text-sm">{t('profile.privacyPolicy')}</p>
             </div>
           </div>
           <ChevronRight size={20} className="text-gray-400" />

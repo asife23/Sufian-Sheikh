@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Activity, Mail, Lock, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -236,6 +236,11 @@ export default function Login() {
               </div>
             </form>
           )}
+        </div>
+        <div className="bg-gray-50 border-t border-gray-100 p-4 text-center">
+          <p className="text-xs text-gray-500">
+            By continuing, you agree to our <Link to="/privacy-policy" className="text-blue-600 hover:underline">Privacy Policy</Link>
+          </p>
         </div>
       </div>
     </div>
