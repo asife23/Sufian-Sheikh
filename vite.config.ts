@@ -12,24 +12,49 @@ export default defineConfig(({mode}) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['icon.svg', 'icon-192x192.png', 'icon-512x512.png'],
+        includeAssets: ['icon.svg', 'icon-192x192.png', 'icon-512x512.png', 'screenshot-desktop.png', 'screenshot-mobile.png'],
         manifest: {
+          id: '/',
+          start_url: '/',
           name: 'Digital Farm App',
           short_name: 'Digital Farm',
           description: 'A comprehensive business management application for various types of farms.',
           theme_color: '#16a34a',
           background_color: '#ffffff',
           display: 'standalone',
+          orientation: 'portrait',
           icons: [
+            {
+              src: 'icon.svg',
+              sizes: '192x192 512x512',
+              type: 'image/svg+xml',
+              purpose: 'any maskable'
+            },
             {
               src: 'icon-192x192.png',
               sizes: '192x192',
-              type: 'image/png'
+              type: 'image/png',
+              purpose: 'any maskable'
             },
             {
               src: 'icon-512x512.png',
               sizes: '512x512',
-              type: 'image/png'
+              type: 'image/png',
+              purpose: 'any maskable'
+            }
+          ],
+          screenshots: [
+            {
+              src: 'screenshot-desktop.png',
+              sizes: '1280x720',
+              type: 'image/png',
+              form_factor: 'wide'
+            },
+            {
+              src: 'screenshot-mobile.png',
+              sizes: '720x1280',
+              type: 'image/png',
+              form_factor: 'narrow'
             }
           ]
         }
