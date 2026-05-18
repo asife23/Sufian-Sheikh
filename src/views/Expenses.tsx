@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, query, where, getDocs, addDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, offlineSafeDocWrite, fastGetDocs } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -28,7 +28,30 @@ export default function Expenses() {
   const [amountPaid, setAmountPaid] = useState('');
 
   useEffect(() => {
-    fetchInitialData();
+    if (!currentUser) return;
+    setLoading(true);
+    
+    const batchesQuery = query(collection(db, 'batches'), where('userId', '==', currentUser.uid), where('status', '==', 'active'));
+    const unsubscribeBatches = onSnapshot(batchesQuery, (snap) => {
+      const batches = snap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+      setActiveBatches(batches);
+      if(batches.length > 0 && !batchId) setBatchId(batches[0].id);
+    });
+
+    const expQuery = query(collection(db, 'expenses'), where('userId', '==', currentUser.uid));
+    const unsubscribeExp = onSnapshot(expQuery, (snap) => {
+      const fetchedRecords = snap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+      setRecords(fetchedRecords.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'expenses');
+      setLoading(false);
+    });
+
+    return () => {
+      unsubscribeBatches();
+      unsubscribeExp();
+    };
   }, [currentUser]);
 
   useEffect(() => {
@@ -36,23 +59,7 @@ export default function Expenses() {
   }, [t]);
 
   const fetchInitialData = async () => {
-    if (!currentUser) return;
-    try {
-      const batchesQuery = query(collection(db, 'batches'), where('userId', '==', currentUser.uid), where('status', '==', 'active'));
-      const batchSnap = await fastGetDocs(batchesQuery);
-      const batches = batchSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setActiveBatches(batches);
-      if(batches.length > 0) setBatchId(batches[0].id);
-
-      const expQuery = query(collection(db, 'expenses'), where('userId', '==', currentUser.uid));
-      const expSnap = await fastGetDocs(expQuery);
-      const fetchedRecords = expSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setRecords(fetchedRecords.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-    } catch (error) {
-      handleFirestoreError(error, OperationType.LIST, 'expenses');
-    } finally {
-      setLoading(false);
-    }
+    // No-op: Data is now synced automatically by onSnapshot
   };
 
     const handleDelete = (id: string) => {

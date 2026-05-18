@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, offlineSafeDocWrite, fastGetDocs } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -100,24 +100,26 @@ export default function Batches() {
   const [costPerChick, setCostPerChick] = useState('');
 
   useEffect(() => {
-    fetchBatches();
+    if (!currentUser) return;
+    setLoading(true);
+    const q = query(
+      collection(db, 'batches'),
+      where('userId', '==', currentUser.uid)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedBatches = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+      setBatches(fetchedBatches.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'batches');
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [currentUser]);
 
   const fetchBatches = async () => {
-    if (!currentUser) return;
-    try {
-      const q = query(
-        collection(db, 'batches'),
-        where('userId', '==', currentUser.uid)
-      );
-      const snapshot = await fastGetDocs(q);
-      const fetchedBatches = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setBatches(fetchedBatches.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-    } catch (error) {
-      handleFirestoreError(error, OperationType.LIST, 'batches');
-    } finally {
-      setLoading(false);
-    }
+    // No-op: handled by onSnapshot
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

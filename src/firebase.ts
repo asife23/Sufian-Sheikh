@@ -53,7 +53,9 @@ export async function offlineSafeDocWrite<T>(promise: Promise<T>): Promise<T | v
   promise.catch(e => console.error("Offline/Background write failed:", e));
   
   if (!navigator.onLine) {
-    return;
+    // Wait briefly to allow Firestore's internal mechanisms to update the local cache
+    // before the caller invokes data fetching again.
+    return new Promise(resolve => setTimeout(resolve, 300));
   }
   // Race against a 1.5 second timeout. If connection is slow or drops, we don't freeze the UI.
   return Promise.race([

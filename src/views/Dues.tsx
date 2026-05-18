@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, offlineSafeDocWrite, fastGetDocs } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -29,7 +29,18 @@ export default function Dues() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
-    fetchInitialData();
+    if (!currentUser) return;
+    setLoading(true);
+    const q = query(collection(db, 'dues'), where('userId', '==', currentUser.uid));
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const fetchedRecords = snap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+      setRecords(fetchedRecords.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'dues');
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, [currentUser]);
 
   const summary = useMemo(() => {
@@ -50,17 +61,7 @@ export default function Dues() {
   const summaryKeys = Object.keys(summary).sort();
 
   const fetchInitialData = async () => {
-    if (!currentUser) return;
-    try {
-      const q = query(collection(db, 'dues'), where('userId', '==', currentUser.uid));
-      const snap = await fastGetDocs(q);
-      const fetchedRecords = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setRecords(fetchedRecords.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-    } catch (error) {
-      handleFirestoreError(error, OperationType.LIST, 'dues');
-    } finally {
-      setLoading(false);
-    }
+    // No-op: Data is now synced automatically by onSnapshot
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

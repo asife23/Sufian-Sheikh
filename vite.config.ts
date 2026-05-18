@@ -11,30 +11,30 @@ export default defineConfig(({mode}) => {
       react(), 
       tailwindcss(),
       VitePWA({
-        injectRegister: 'script',
         registerType: 'autoUpdate',
         devOptions: {
           enabled: true,
           type: 'module',
         },
         includeAssets: ['icon.svg', 'icon-192x192.png', 'icon-512x512.png', 'screenshot-desktop.png', 'screenshot-mobile.png'],
-        manifestFilename: 'manifest.json',
         manifest: {
           id: '/',
           start_url: '/',
           name: 'Digital Farm App',
           short_name: 'Digital Farm',
           description: 'A comprehensive business management application for various types of farms.',
-          theme_color: '#16a34a',
+          theme_color: '#f97316',
           background_color: '#ffffff',
           display: 'standalone',
+          display_override: ['window-controls-overlay', 'minimal-ui'],
           orientation: 'portrait',
+          categories: ['productivity', 'business'],
           icons: [
             {
               src: 'icon.svg',
               sizes: '192x192 512x512',
               type: 'image/svg+xml',
-              purpose: 'any maskable'
+              purpose: 'any'
             },
             {
               src: 'icon-192x192.png',
