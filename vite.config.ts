@@ -11,8 +11,14 @@ export default defineConfig(({mode}) => {
       react(), 
       tailwindcss(),
       VitePWA({
+        injectRegister: 'script',
         registerType: 'autoUpdate',
+        devOptions: {
+          enabled: true,
+          type: 'module',
+        },
         includeAssets: ['icon.svg', 'icon-192x192.png', 'icon-512x512.png', 'screenshot-desktop.png', 'screenshot-mobile.png'],
+        manifestFilename: 'manifest.json',
         manifest: {
           id: '/',
           start_url: '/',
