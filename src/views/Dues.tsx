@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType, offlineSafeDocWrite } from '../firebase';
+import { db, handleFirestoreError, OperationType, offlineSafeDocWrite, fastGetDocs } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { FileText, Plus, CheckCircle, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
@@ -53,7 +53,7 @@ export default function Dues() {
     if (!currentUser) return;
     try {
       const q = query(collection(db, 'dues'), where('userId', '==', currentUser.uid));
-      const snap = await getDocs(q);
+      const snap = await fastGetDocs(q);
       const fetchedRecords = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setRecords(fetchedRecords.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     } catch (error) {
@@ -270,7 +270,7 @@ export default function Dues() {
             <input type="text" value={details} onChange={(e) => setDetails(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-pink-500" placeholder={t('dues.detailsPlaceholder')} />
           </div>
           <button disabled={isSubmitting} type="submit" className="w-full bg-pink-600 text-white font-bold py-3 rounded-xl mt-2 disabled:bg-gray-400">
-            {isSubmitting ? t('medicine.savingBtn') : t('medicine.saveBtn')}
+            {isSubmitting ? t('common.saving') : t('common.save')}
           </button>
         </form>
       )}
@@ -422,7 +422,7 @@ export default function Dues() {
                   disabled={isSubmitting}
                   className="flex-1 bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
                 >
-                  {isSubmitting ? t('medicine.savingBtn') : t('medicine.saveBtn')}
+                  {isSubmitting ? t('common.saving') : t('common.save')}
                 </button>
               </div>
             </form>

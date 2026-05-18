@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { db, handleFirestoreError, OperationType, fastGetDocs } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { BarChart3, TrendingDown, TrendingUp, AlertCircle, Download, FileText, FileSpreadsheet } from 'lucide-react';
@@ -35,7 +35,7 @@ export default function Reports() {
     if (!currentUser) return;
     try {
       const q = query(collection(db, 'batches'), where('userId', '==', currentUser.uid));
-      const snap = await getDocs(q);
+      const snap = await fastGetDocs(q);
       const batches = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setActiveBatches(batches);
       if(batches.length > 0) setSelectedBatchId(batches[0].id);
@@ -51,35 +51,35 @@ export default function Reports() {
     try {
       // Fetch Expenses
       const expQ = query(collection(db, 'expenses'), where('userId', '==', currentUser.uid), where('batchId', '==', batchId));
-      const expSnap = await getDocs(expQ);
+      const expSnap = await fastGetDocs(expQ);
       let tExpenses = 0;
       expSnap.forEach(doc => tExpenses += (Number(doc.data().amount) || 0));
       setTotalExpenses(tExpenses);
 
       // Fetch Sales
       const salesQ = query(collection(db, 'sales'), where('userId', '==', currentUser.uid), where('batchId', '==', batchId));
-      const salesSnap = await getDocs(salesQ);
+      const salesSnap = await fastGetDocs(salesQ);
       let tSales = 0;
       salesSnap.forEach(doc => tSales += (Number(doc.data().totalAmount) || 0));
       setTotalSales(tSales);
 
       // Fetch Feed Cost
       const feedQ = query(collection(db, 'feed_records'), where('userId', '==', currentUser.uid), where('batchId', '==', batchId));
-      const feedSnap = await getDocs(feedQ);
+      const feedSnap = await fastGetDocs(feedQ);
       let tFeed = 0;
       feedSnap.forEach(doc => tFeed += (Number(doc.data().cost) || 0));
       setTotalFeedCost(tFeed);
 
       // Fetch Medicine Cost
       const medQ = query(collection(db, 'medicine_records'), where('userId', '==', currentUser.uid), where('batchId', '==', batchId));
-      const medSnap = await getDocs(medQ);
+      const medSnap = await fastGetDocs(medQ);
       let tMed = 0;
       medSnap.forEach(doc => tMed += (Number(doc.data().cost) || 0));
       setTotalMedicineCost(tMed);
 
       // Fetch Mortality
       const mortQ = query(collection(db, 'mortality'), where('userId', '==', currentUser.uid), where('batchId', '==', batchId));
-      const mortSnap = await getDocs(mortQ);
+      const mortSnap = await fastGetDocs(mortQ);
       let tMort = 0;
       mortSnap.forEach(doc => tMort += (Number(doc.data().count) || 0));
       setTotalMortality(tMort);

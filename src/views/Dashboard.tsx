@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, query, where, getDocs, orderBy, doc, onSnapshot } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { db, handleFirestoreError, OperationType, fastGetDocs } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Package, TrendingUp, AlertTriangle, ArrowRight } from 'lucide-react';
@@ -35,7 +35,7 @@ export default function Dashboard() {
         where('userId', '==', currentUser.uid),
         where('status', '==', 'active')
       );
-      const snapshot = await getDocs(q);
+      const snapshot = await fastGetDocs(q);
       if (!snapshot.empty) {
         const batchData = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
         setActiveBatch(batchData);
@@ -58,7 +58,7 @@ export default function Dashboard() {
         where('userId', '==', currentUser.uid),
         where('batchId', '==', batchId)
       );
-      const snapshot = await getDocs(q);
+      const snapshot = await fastGetDocs(q);
       let count = 0;
       snapshot.forEach(doc => {
         count += doc.data().count;

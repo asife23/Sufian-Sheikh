@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, getDocs, addDoc, doc, deleteDoc } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType, offlineSafeDocWrite } from '../firebase';
+import { db, handleFirestoreError, OperationType, offlineSafeDocWrite, fastGetDocs } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ShieldPlus, Plus, Trash2 } from 'lucide-react';
@@ -36,13 +36,13 @@ export default function Medicine() {
     if (!currentUser) return;
     try {
       const batchesQuery = query(collection(db, 'batches'), where('userId', '==', currentUser.uid), where('status', '==', 'active'));
-      const batchSnap = await getDocs(batchesQuery);
+      const batchSnap = await fastGetDocs(batchesQuery);
       const batches = batchSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setActiveBatches(batches);
       if(batches.length > 0) setBatchId(batches[0].id);
 
       const medQuery = query(collection(db, 'medicine_records'), where('userId', '==', currentUser.uid));
-      const medSnap = await getDocs(medQuery);
+      const medSnap = await fastGetDocs(medQuery);
       const fetchedRecords = medSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setRecords(fetchedRecords.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     } catch (error) {
@@ -214,7 +214,7 @@ export default function Medicine() {
             <input type="text" value={details} onChange={(e) => setDetails(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" placeholder={t('medicine.detailsPlaceholder')} />
           </div>
           <button disabled={isSubmitting} type="submit" className="w-full bg-blue-500 text-white font-bold py-3 rounded-xl mt-2 disabled:bg-gray-400">
-            {isSubmitting ? t('medicine.savingBtn') : t('medicine.saveBtn')}
+            {isSubmitting ? t('common.saving') : t('common.save')}
           </button>
         </form>
       )}

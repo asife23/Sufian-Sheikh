@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType, offlineSafeDocWrite } from '../firebase';
+import { db, handleFirestoreError, OperationType, offlineSafeDocWrite, fastGetDocs } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Package, Plus, Trash2 } from 'lucide-react';
@@ -24,22 +24,22 @@ const BatchSummary = ({ batchId, totalChicks, costPerChick }: { batchId: string,
 
         // Fetch Sales
         const salesQ = query(collection(db, 'sales'), where('userId', '==', currentUser.uid), where('batchId', '==', batchId));
-        const salesSnap = await getDocs(salesQ);
+        const salesSnap = await fastGetDocs(salesQ);
         salesSnap.forEach(doc => tSales += Number(doc.data().totalAmount || 0));
 
         // Fetch Expenses
         const expQ = query(collection(db, 'expenses'), where('userId', '==', currentUser.uid), where('batchId', '==', batchId));
-        const expSnap = await getDocs(expQ);
+        const expSnap = await fastGetDocs(expQ);
         expSnap.forEach(doc => tCost += Number(doc.data().amount || 0));
 
         // Fetch Feed Cost
         const feedQ = query(collection(db, 'feed_records'), where('userId', '==', currentUser.uid), where('batchId', '==', batchId));
-        const feedSnap = await getDocs(feedQ);
+        const feedSnap = await fastGetDocs(feedQ);
         feedSnap.forEach(doc => tCost += Number(doc.data().cost || 0));
 
         // Fetch Medicine Cost
         const medQ = query(collection(db, 'medicine_records'), where('userId', '==', currentUser.uid), where('batchId', '==', batchId));
-        const medSnap = await getDocs(medQ);
+        const medSnap = await fastGetDocs(medQ);
         medSnap.forEach(doc => tCost += Number(doc.data().cost || 0));
 
         // Add original chicks cost
@@ -110,7 +110,7 @@ export default function Batches() {
         collection(db, 'batches'),
         where('userId', '==', currentUser.uid)
       );
-      const snapshot = await getDocs(q);
+      const snapshot = await fastGetDocs(q);
       const fetchedBatches = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setBatches(fetchedBatches.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     } catch (error) {
