@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { db, handleFirestoreError, OperationType, offlineSafeDocWrite } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Package, Plus, Trash2 } from 'lucide-react';
@@ -140,7 +140,7 @@ export default function Batches() {
         updatedAt: new Date().toISOString()
       };
 
-      await addDoc(collection(db, 'batches'), newBatch);
+      await offlineSafeDocWrite(addDoc(collection(db, 'batches'), newBatch));
       toast.success(t('batches.addSuccess'));
       setShowForm(false);
       setBatchName('');
@@ -161,10 +161,10 @@ export default function Batches() {
     if(!completeBatchId) return;
     try {
       const batchRef = doc(db, 'batches', completeBatchId);
-      await updateDoc(batchRef, { 
+      await offlineSafeDocWrite(updateDoc(batchRef, { 
         status: 'completed',
         updatedAt: new Date().toISOString()
-      });
+      }));
       toast.success(t('batches.completeSuccess'));
       setCompleteBatchId(null);
       fetchBatches();
@@ -182,7 +182,7 @@ export default function Batches() {
   const executeDelete = async () => {
     if (!deleteId) return;
     try {
-      await deleteDoc(doc(db, 'batches', deleteId));
+      await offlineSafeDocWrite(deleteDoc(doc(db, 'batches', deleteId)));
       toast.success(t('batches.delSuccess'), { duration: 3000 });
       fetchBatches();
     } catch (error) {

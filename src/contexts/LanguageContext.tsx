@@ -192,6 +192,8 @@ const translations: Record<Language, Record<string, string>> = {
     'medicine.medicine': 'ঔষধ',
     'medicine.shopTxt': 'দোকান: ',
     'medicine.addSuccess': 'রেকর্ড যোগ করা হয়েছে!',
+    'medicine.saveBtn': 'সংরক্ষণ করুন',
+    'medicine.savingBtn': 'সংরক্ষণ হচ্ছে...',
     'medicine.recordVal': ' এর {type}: {name} {details}',
 
     // Expenses
@@ -522,6 +524,8 @@ const translations: Record<Language, Record<string, string>> = {
     'medicine.medicine': 'Medicine',
     'medicine.shopTxt': 'Shop: ',
     'medicine.addSuccess': 'Record added successfully!',
+    'medicine.saveBtn': 'Save',
+    'medicine.savingBtn': 'Saving...',
     'medicine.recordVal': ' {type}: {name} {details}',
 
     // Expenses

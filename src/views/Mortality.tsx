@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, getDocs, addDoc, doc, deleteDoc } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { db, handleFirestoreError, OperationType, offlineSafeDocWrite } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { AlertTriangle, Plus, Trash2 } from 'lucide-react';
@@ -59,7 +59,7 @@ export default function Mortality() {
   const executeDelete = async () => {
     if (!deleteId) return;
     try {
-      await deleteDoc(doc(db, 'mortality', deleteId));
+      await offlineSafeDocWrite(deleteDoc(doc(db, 'mortality', deleteId)));
       toast.success(t('common.success'), { duration: 3000 });
       fetchInitialData();
     } catch (error) {
@@ -87,7 +87,7 @@ export default function Mortality() {
         createdAt: new Date().toISOString()
       };
 
-      await addDoc(collection(db, 'mortality'), newRecord);
+      await offlineSafeDocWrite(addDoc(collection(db, 'mortality'), newRecord));
       toast.success(t('mortality.addSuccess'));
       setShowForm(false);
       setCount('');

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, getDocs, addDoc, doc, deleteDoc } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { db, handleFirestoreError, OperationType, offlineSafeDocWrite } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ShoppingCart, Plus, Trash2 } from 'lucide-react';
@@ -81,7 +81,7 @@ export default function Sales() {
   const executeDelete = async () => {
     if (!deleteId) return;
     try {
-      await deleteDoc(doc(db, 'sales', deleteId));
+      await offlineSafeDocWrite(deleteDoc(doc(db, 'sales', deleteId)));
       toast.success(t('common.success'), { duration: 3000 });
       fetchInitialData();
     } catch (error) {
@@ -130,7 +130,7 @@ export default function Sales() {
         createdAt: new Date().toISOString()
       };
 
-      await addDoc(collection(db, 'sales'), newRecord);
+      await offlineSafeDocWrite(addDoc(collection(db, 'sales'), newRecord));
 
       if (paidVal < totalAmountVal) {
         const batchName = activeBatches.find(b => b.id === batchId)?.batchName || 'Unknown Batch';
@@ -147,7 +147,7 @@ export default function Sales() {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
-        await addDoc(collection(db, 'dues'), dueRecord);
+        await offlineSafeDocWrite(addDoc(collection(db, 'dues'), dueRecord));
       }
 
       toast.success(t('sales.addSuccess'));

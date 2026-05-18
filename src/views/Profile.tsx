@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { db, handleFirestoreError, OperationType, offlineSafeDocWrite } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage, Language } from '../contexts/LanguageContext';
 import { User, LogOut, CheckCircle, Settings, HelpCircle, Info, Globe, ChevronRight, X, MessageCircle, Phone, Mail, ExternalLink, ShieldCheck, FileText } from 'lucide-react';
@@ -73,18 +73,18 @@ export default function Profile() {
       };
 
       if (docSnap.exists()) {
-        await updateDoc(userRef, {
+        await offlineSafeDocWrite(updateDoc(userRef, {
           name,
           phone,
           farmName,
           language,
           updatedAt: new Date().toISOString()
-        });
+        }));
       } else {
-        await setDoc(userRef, {
+        await offlineSafeDocWrite(setDoc(userRef, {
           ...payload,
           createdAt: new Date().toISOString()
-        });
+        }));
       }
       
       setGlobalLanguage(language as Language);

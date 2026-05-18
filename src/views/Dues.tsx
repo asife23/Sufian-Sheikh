@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { db, handleFirestoreError, OperationType, offlineSafeDocWrite } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { FileText, Plus, CheckCircle, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
@@ -85,7 +85,7 @@ export default function Dues() {
         updatedAt: new Date().toISOString()
       };
 
-      await addDoc(collection(db, 'dues'), newRecord);
+      await offlineSafeDocWrite(addDoc(collection(db, 'dues'), newRecord));
       toast.success(t('medicine.addSuccess'));
       setShowForm(false);
       setPersonName('');
@@ -110,7 +110,7 @@ export default function Dues() {
   const executeDelete = async () => {
     if (!deleteId) return;
     try {
-      await deleteDoc(doc(db, 'dues', deleteId));
+      await offlineSafeDocWrite(deleteDoc(doc(db, 'dues', deleteId)));
       toast.success(t('common.success'), { duration: 3000 });
       fetchInitialData();
     } catch (error) {
@@ -148,13 +148,13 @@ export default function Dues() {
       };
 
       const ref = doc(db, 'dues', paymentRecordId);
-      await updateDoc(ref, { 
+      await offlineSafeDocWrite(updateDoc(ref, { 
         amount: Number(record.amount),
         totalPaid: newTotalPaid,
         payments: [...paymentHistory, newPayment],
         status: isFullyPaid ? 'paid' : 'pending',
         updatedAt: new Date().toISOString()
-      });
+      }));
       
       if (returnAmount > 0) {
         toast.success(`${t('dues.updateReturn')}${returnAmount}`, { duration: 5000 });
@@ -200,7 +200,7 @@ export default function Dues() {
         }];
       }
 
-      await updateDoc(ref, updateData);
+      await offlineSafeDocWrite(updateDoc(ref, updateData));
       toast.success(t('dues.markPaidSuccess'));
       setMarkPaidId(null);
       fetchInitialData();

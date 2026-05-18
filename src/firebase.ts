@@ -46,3 +46,18 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   }
   console.error('Firestore Error: ', JSON.stringify(errInfo, null, 2));
 }
+
+// Helper to prevent UI freezing on weak connections or offline state
+export async function offlineSafeDocWrite<T>(promise: Promise<T>): Promise<T | void> {
+  if (!navigator.onLine) {
+    // If offline, SDK handles it locally, but the promise won't resolve until we are online.
+    // So we don't await the actual server sync. We just return.
+    promise.catch(e => console.error("Offline write failed later:", e));
+    return;
+  }
+  // Race against a 2 second timeout. If connection is slow or drops, we don't freeze the UI.
+  return Promise.race([
+    promise,
+    new Promise<void>(resolve => setTimeout(resolve, 2000))
+  ]);
+}

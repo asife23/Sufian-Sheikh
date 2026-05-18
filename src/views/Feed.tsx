@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, getDocs, addDoc, doc, deleteDoc } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { db, handleFirestoreError, OperationType, offlineSafeDocWrite } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ClipboardList, Plus, Trash2 } from 'lucide-react';
@@ -89,7 +89,7 @@ export default function Feed() {
   const executeDelete = async () => {
     if (!deleteId) return;
     try {
-      await deleteDoc(doc(db, 'feed_records', deleteId));
+      await offlineSafeDocWrite(deleteDoc(doc(db, 'feed_records', deleteId)));
       toast.success(t('common.success'), { duration: 3000 });
       fetchInitialData();
     } catch (error) {
@@ -133,7 +133,7 @@ export default function Feed() {
         createdAt: new Date().toISOString()
       };
 
-      await addDoc(collection(db, 'feed_records'), newRecord);
+      await offlineSafeDocWrite(addDoc(collection(db, 'feed_records'), newRecord));
 
       if (paidVal < totalAmountVal) {
         const batchName = activeBatches.find(b => b.id === batchId)?.batchName || 'Unknown Batch';
@@ -150,7 +150,7 @@ export default function Feed() {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
-        await addDoc(collection(db, 'dues'), dueRecord);
+        await offlineSafeDocWrite(addDoc(collection(db, 'dues'), dueRecord));
       }
 
       toast.success(t('feed.addSuccess'));
