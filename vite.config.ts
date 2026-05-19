@@ -16,7 +16,7 @@ export default defineConfig(({mode}) => {
           enabled: true,
           type: 'module',
         },
-        includeAssets: ['icon.svg', 'icon-192x192.png', 'icon-512x512.png', 'screenshot-desktop.png', 'screenshot-mobile.png'],
+        includeAssets: ['icon-192x192.png', 'icon-512x512.png', 'screenshot-desktop.png', 'screenshot-mobile.png'],
         manifestFilename: 'manifest.json',
         manifest: {
           id: '/',
