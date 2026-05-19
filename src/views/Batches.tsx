@@ -181,6 +181,13 @@ export default function Batches() {
     setDeleteId(id);
   };
 
+  const calculateAge = (startDate: string) => {
+    const start = new Date(startDate);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - start.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
   const executeDelete = async () => {
     if (!deleteId) return;
     try {
@@ -259,6 +266,7 @@ export default function Batches() {
                 <h3 className="font-bold text-lg">{batch.batchName}</h3>
                 <p className="text-xs text-gray-500">
                   {batch.farmType === 'cattle' ? t('batches.cattle') : batch.farmType === 'fish' ? t('batches.fish') : t('batches.poultry')} • {t('batches.started')} {new Date(batch.startDate).toLocaleDateString()}
+                  {batch.status === 'active' && ` • ${t('dashboard.age')}: ${calculateAge(batch.startDate)} ${t('dashboard.days')}`}
                 </p>
               </div>
               <span className={`px-2 py-1 text-xs font-bold rounded-full ${batch.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>

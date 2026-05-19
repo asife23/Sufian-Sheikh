@@ -95,7 +95,7 @@ export default function Dashboard() {
             </h4>
           </div>
           
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="bg-blue-50 p-3 rounded-lg">
               <p className="text-xs text-gray-500 mb-1">{t('dashboard.totalBirds')}</p>
               <p className="text-lg font-bold text-blue-700">{activeBatch.totalChicks}</p>
@@ -103,6 +103,10 @@ export default function Dashboard() {
             <div className="bg-red-50 p-3 rounded-lg">
               <p className="text-xs text-gray-500 mb-1">{t('dashboard.totalMortality')}</p>
               <p className="text-lg font-bold text-red-700">{totalMortality}</p>
+            </div>
+            <div className="bg-orange-50 p-3 rounded-lg">
+              <p className="text-xs text-gray-500 mb-1">{t('dashboard.age')}</p>
+              <p className="text-lg font-bold text-orange-700">{calculateAge(activeBatch.startDate)} {t('dashboard.days')}</p>
             </div>
           </div>
 
