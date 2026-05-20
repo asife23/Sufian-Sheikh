@@ -30,6 +30,20 @@ export default defineConfig(({mode}) => {
           display_override: ['window-controls-overlay', 'minimal-ui'],
           orientation: 'portrait',
           categories: ['productivity', 'business'],
+          lang: 'bn',
+          dir: 'ltr',
+          prefer_related_applications: false,
+          related_applications: [],
+          iarc_rating_id: 'e',
+          shortcuts: [
+            {
+              name: 'Batches',
+              short_name: 'Batches',
+              description: 'View your active and completed batches',
+              url: '/batches',
+              icons: [{ src: '/icon-192x192.png', sizes: '192x192', type: 'image/png' }]
+            }
+          ],
           icons: [
             {
               src: '/icon-192x192.png',
