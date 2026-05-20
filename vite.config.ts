@@ -16,7 +16,7 @@ export default defineConfig(({mode}) => {
           enabled: true,
           type: 'module',
         },
-        includeAssets: ['icon-192x192.png', 'icon-512x512.png', 'screenshot-desktop.png', 'screenshot-mobile.png'],
+        includeAssets: ['pwa-192x192.png', 'pwa-512x512.png', 'screenshot-desktop.png', 'screenshot-mobile.png'],
         manifestFilename: 'manifest.json',
         manifest: {
           id: '/',
@@ -41,30 +41,30 @@ export default defineConfig(({mode}) => {
               short_name: 'Batches',
               description: 'View your active and completed batches',
               url: '/batches',
-              icons: [{ src: '/icon-192x192.png', sizes: '192x192', type: 'image/png' }]
+              icons: [{ src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
             }
           ],
           icons: [
             {
-              src: '/icon-192x192.png',
+              src: '/pwa-192x192.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any'
             },
             {
-              src: '/icon-512x512.png',
+              src: '/pwa-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any'
             },
             {
-              src: '/icon-192x192.png',
+              src: '/pwa-192x192.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'maskable'
             },
             {
-              src: '/icon-512x512.png',
+              src: '/pwa-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable'
