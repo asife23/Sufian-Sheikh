@@ -41,30 +41,30 @@ export default defineConfig(({mode}) => {
               short_name: 'Batches',
               description: 'View your active and completed batches',
               url: '/batches',
-              icons: [{ src: '/icon-192x192.png', sizes: '192x192', type: 'image/png' }]
+              icons: [{ src: 'icon-192x192.png', sizes: '192x192', type: 'image/png' }]
             }
           ],
           icons: [
             {
-              src: '/icon-192x192.png',
+              src: 'icon-192x192.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any'
             },
             {
-              src: '/icon-512x512.png',
+              src: 'icon-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any'
             },
             {
-              src: '/icon-192x192.png',
+              src: 'icon-192x192.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'maskable'
             },
             {
-              src: '/icon-512x512.png',
+              src: 'icon-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable'
@@ -72,13 +72,13 @@ export default defineConfig(({mode}) => {
           ],
           screenshots: [
             {
-              src: '/screenshot-desktop.png',
+              src: 'screenshot-desktop.png',
               sizes: '1280x720',
               type: 'image/png',
               form_factor: 'wide'
             },
             {
-              src: '/screenshot-mobile.png',
+              src: 'screenshot-mobile.png',
               sizes: '720x1280',
               type: 'image/png',
               form_factor: 'narrow'
