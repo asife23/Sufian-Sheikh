@@ -28,22 +28,15 @@ jobs:
       - name: Create Cordova Project and Package Web Files
         run: |
           cd ..
-          # ১. একটি ফ্রেশ কর্ডোভা প্রজেক্ট তৈরি করা হচ্ছে
           cordova create build_tmp com.bangla.english BhashaApp
           cd build_tmp
-          
-          # ২. ডিফল্ট ফাইল মুছে আপনার গিটহাবের সব ফাইল (HTML, CSS, JS) সেখানে কপি করা হচ্ছে
           rm -rf www/*
           cp -r ../Sufian-Sheikh/* www/
-          
-          # ৩. অ্যান্ড্রয়েড প্ল্যাটফর্ম যুক্ত করা হচ্ছে
           cordova platform add android
-          
-          # ৪. ফাইনাল APK বিল্ড করা হচ্ছে
           cordova build android --debug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: BhashaApp-APK
-          path: ../build_tmp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          path: /home/runner/work/Sufian-Sheikh/build_tmp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
