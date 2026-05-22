@@ -28,17 +28,25 @@ jobs:
       - name: Create Cordova Project and Package Web Files
         run: |
           cd ..
-          # এখানে অ্যাপের নাম দেওয়া হয়েছে "SufianBhashaApp" এবং আইডি ইউনিক করা হয়েছে
           cordova create build_tmp com.sufian.bhasha SufianBhashaApp
           cd build_tmp
-          
           rm -rf www/*
-          # আপনার গিটহাবের সব ফাইল কপি করা হচ্ছে
-          cp -r ../Sufian-Sheikh/* www/
           
-          # যদি আপনার মেইন ফাইলের নাম index.html না হয়ে অন্য কিছু হয়, তা ফিক্স করার জন্য:
+          # আপনার গিটহাবের মেইন ফাইল বা সাব-ফোল্ডারের সব ফাইল খুঁজে www তে কপি করা হচ্ছে
+          if [ -d "../Sufian-Sheikh/www" ]; then
+            cp -r ../Sufian-Sheikh/www/* www/
+          else
+            cp -r ../Sufian-Sheikh/* www/
+          fi
+          
+          # যদি ফাইলগুলো আরও ভেতরে থাকে, সেগুলোকে বের করে আনা হচ্ছে
+          if [ ! -f "www/index.html" ] && [ -f "www/public/index.html" ]; then
+            cp -r www/public/* www/
+          fi
+
+          # মেইন ফাইল ফিক্সিং (যাতে সাদা স্ক্রিন না আসে)
           if [ ! -f "www/index.html" ]; then
-            cp www/Home.html www/index.html || cp www/home.html www/index.html || true
+            cp www/Home.html www/index.html || cp www/home.html www/index.html || cp www/Index.html www/index.html || true
           fi
 
           cordova platform add android
