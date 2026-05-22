@@ -1,59 +1,58 @@
 name: Build Android APK
-on: [push, pull_request]
+
+on:
+push:
+pull_request:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+build:
+runs-on: ubuntu-latest
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+steps:
+  - name: Checkout Repository
+    uses: actions/checkout@v4
 
-      - name: Install Cordova
-        run: npm install -g cordova
+  - name: Setup Node.js
+    uses: actions/setup-node@v4
+    with:
+      node-version: 20
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
+  - name: Install Dependencies
+    run: npm install
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+  - name: Build Vite Project
+    run: npm run build
 
-      - name: Create Cordova Project and Package Web Files
-        run: |
-          cd ..
-          cordova create build_tmp com.sufian.bhasha SufianBhashaApp
-          cd build_tmp
-          rm -rf www/*
-          
-          # আপনার গিটহাবের মেইন ফাইল বা সাব-ফোল্ডারের সব ফাইল খুঁজে www তে কপি করা হচ্ছে
-          if [ -d "../Sufian-Sheikh/www" ]; then
-            cp -r ../Sufian-Sheikh/www/* www/
-          else
-            cp -r ../Sufian-Sheikh/* www/
-          fi
-          
-          # যদি ফাইলগুলো আরও ভেতরে থাকে, সেগুলোকে বের করে আনা হচ্ছে
-          if [ ! -f "www/index.html" ] && [ -f "www/public/index.html" ]; then
-            cp -r www/public/* www/
-          fi
+  - name: Install Cordova
+    run: npm install -g cordova
 
-          # মেইন ফাইল ফিক্সিং (যাতে সাদা স্ক্রিন না আসে)
-          if [ ! -f "www/index.html" ]; then
-            cp www/Home.html www/index.html || cp www/home.html www/index.html || cp www/Index.html www/index.html || true
-          fi
+  - name: Setup Java 17
+    uses: actions/setup-java@v4
+    with:
+      distribution: zulu
+      java-version: 17
 
-          cordova platform add android
-          cordova build android --debug
+  - name: Setup Android SDK
+    uses: android-actions/setup-android@v3
 
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: SufianBhashaApp-APK
-          path: /home/runner/work/Sufian-Sheikh/build_tmp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+  - name: Create Android App
+    run: |
+      cd ..
+
+      cordova create farmapp com.sufian.digitalfarm DigitalFarm
+
+      cd farmapp
+
+      rm -rf www/*
+
+      cp -r ../Sufian-Sheikh/dist/* www/
+
+      cordova platform add android
+
+      cordova build android
+
+  - name: Upload APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: DigitalFarm-APK
+      path: /home/runner/farmapp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
