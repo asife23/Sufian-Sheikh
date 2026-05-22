@@ -13,11 +13,8 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Build Web Project
-        run: npm run build --if-present
+      - name: Install Cordova
+        run: npm install -g cordova
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -28,16 +25,25 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Sync and Build with Capacitor
+      - name: Create Cordova Project and Package Web Files
         run: |
-          npx cap init "BhashaApp" "com.bangla.english" --web-dir=www || true
-          npx cap add android || true
-          npx cap sync android
-          cd android
-          ./gradlew assembleDebug
+          cd ..
+          # ১. একটি ফ্রেশ কর্ডোভা প্রজেক্ট তৈরি করা হচ্ছে
+          cordova create build_tmp com.bangla.english BhashaApp
+          cd build_tmp
+          
+          # ২. ডিফল্ট ফাইল মুছে আপনার গিটহাবের সব ফাইল (HTML, CSS, JS) সেখানে কপি করা হচ্ছে
+          rm -rf www/*
+          cp -r ../Sufian-Sheikh/* www/
+          
+          # ৩. অ্যান্ড্রয়েড প্ল্যাটফর্ম যুক্ত করা হচ্ছে
+          cordova platform add android
+          
+          # ৪. ফাইনাল APK বিল্ড করা হচ্ছে
+          cordova build android --debug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: BhashaApp-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: ../build_tmp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
